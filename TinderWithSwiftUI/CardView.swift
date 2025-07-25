@@ -25,6 +25,8 @@ struct CardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 15))
         .offset(offset)
         .gesture(gesture)
+        .scaleEffect(scale)
+        .rotationEffect(.degrees(angle))
     }
 }
 
@@ -63,33 +65,39 @@ extension CardView {
 }
 
 extension CardView {
+    
+    private var screenWidth: CGFloat {
+        guard let window = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return 0.0 }
+        return window.screen.bounds.width
+    }
+    
+    private var scale: CGFloat {
+        return max(1.0 - (abs(offset.width) / screenWidth), 0.75)
+    }
+    
+    private var angle : Double {
+        return (offset.width / screenWidth) * 10.0
+    }
+    
     private var gesture: some Gesture {
         DragGesture()
             .onChanged { value in
                 let width = value.translation.width
                 let height = value.translation.height
                 
-//                var limitedHeight: CGFloat = 0
-//                
-//                if (height > 0) {
-//                    if (height > 100) {
-//                        limitedHeight = 100
-//                    } else {
-//                        limitedHeight = height
-//                    }
-//                } else {
-//                    if (height < -100) {
-//                        limitedHeight = -100
-//                    } else {
-//                        limitedHeight = height
-//                    }
-//                }
                 let limitedHeight = height > 0 ? min(height, 100) : max(height, -100)
                 
                 offset = CGSize(width: width, height: limitedHeight)
             }
             .onEnded { value in
-                withAnimation(.smooth) {
+                let width = value.translation.width
+                let height = value.translation.height
+                
+                if (abs(width) > (screenWidth / 4)) {
+                    withAnimation(.smooth) {
+                        offset = CGSize(width: width > 0 ? screenWidth * 1.5 : -screenWidth * 1.5, height: height)
+                    }
+                } else {
                     offset = .zero
                 }
             }
